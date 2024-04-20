@@ -80,8 +80,8 @@ The idea is to store personal and sensitive information such as API keyes and ot
 3. Open the 'secrets.toml' file and input the following:
 	***The API Keys will be provided for you when the hackathon begins***
    ```bash
-   OPEN_AI_API_KEY = "input-the-key-that-you-recieved-here"
-   etc
+   OPENAI_API_KEY = "input-the-key-that-you-recieved-here"
+   PINECONE_API_KEY = "input-the-key-that-you-recieved-here"
    ...
    ```
 4. ***EXAMPLE***: In our python file, we can fetch the API key from secrets by using the streamlit command:
