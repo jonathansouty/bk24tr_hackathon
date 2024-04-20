@@ -33,7 +33,6 @@ def intro():
     st.header('🌎 RAG Builder App', divider="green")
     st.markdown("\n \n")
 
-    # Description
     st.write("""
     This app demonstrates the use of Streamlit, OpenAI API, LangChain and Pinecone Serverless Vector database 
     to build RAG (Retrieval-Augmented Generation). With this app, you can interact with 
@@ -43,16 +42,6 @@ def intro():
     """)
 
     st.subheader("👈 Go to the instructions page to get started.")
-
-    # # Instructions
-    # st.header('Instructions:')
-    # st.write("""
-    # 1. Obtain API keys from OpenAI and Pinecone.
-    # 2. Enter the keys in the appropriate fields.
-    # 4. Create a new index in Pinecone.
-    # 5. Upsert vectors to the index.
-    # 6. Start testing RAG functionality by chatting with the OpenAI GPT-4 model.
-    # """)
 
     st.subheader("🔗 Useful Links:")
     st.page_link("https://chunkviz.up.railway.app/", label="👉 ChunkViz")
@@ -95,13 +84,13 @@ def rag_info():
     st.subheader("Pinecone Workflow:")
     st.markdown("**Getting started with Pincone:**")
     st.write(" Create a new vector database by specifying the dimension of the vectors you'll be storing and the metric (eg. cosine, euclidean distance, dot product). You can then start uploading your vectors using the upsert method, where each vector is associated with a unique ID. Finally, you can query the database by sending vector queries to retrieve the most similar vectors based on your specified metrics. Pinecone also supports more advanced features like metadata filtering and batch querying, enabling powerful and efficient data retrieval in your applications.")
-    st.image("https://github-production-user-asset-6210df.s3.amazonaws.com/118614390/324110550-0f7bafb4-73be-432a-9eee-0bbcff4c097a.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240419%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240419T204027Z&X-Amz-Expires=300&X-Amz-Signature=d57c951e39c0430ca29b17ed3131ac4e3e9f8f40c3c7bef4ecb87553e9f2c13b&X-Amz-SignedHeaders=host&actor_id=118614390&key_id=0&repo_id=787451590", use_column_width=True)
+    st.image("https://i.postimg.cc/8CjCcJTM/vectordb.png", use_column_width=True)
 
     "---"
 
     st.subheader("RAG Workflow:")
     st.write("In this specific example, the user asks about servicing a model of forklift, and the RAG system provides a detailed list of parts needed for servicing the brakes on that forklift model. The RAG system retrieves the relevant information from a knowledge base and generates a response based on the user's query. The system uses a combination of retrieval and generation techniques to provide accurate and informative responses to user queries.")
-    st.image("https://github-production-user-asset-6210df.s3.amazonaws.com/118614390/324124618-3e018ef6-81e4-48e2-a577-6ee8ce7eaf90.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240419%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240419T214532Z&X-Amz-Expires=300&X-Amz-Signature=680e521fa796b281cc7ff137d4eaf47339b39009d52ad07b1b61d2aa2ced1ae7&X-Amz-SignedHeaders=host&actor_id=118614390&key_id=0&repo_id=787451590", use_column_width=True)
+    st.image("https://i.postimg.cc/rFfc4VnJ/ragmindmap.png", use_column_width=True)
     rag_explanation = """
     **1. User Prompt:** The process begins with a user asking a question, such as inquiring about the specific servicing requirements for a model of forklifts.
 
@@ -158,25 +147,27 @@ def pc_create_index():
         metric = st.selectbox("Metric", ["cosine", "euclidean"], help=f"For {embeddings_model}: **Cosine** is recommended")
         cloud = st.selectbox("Cloud", ["aws", "gcp"])
         region = st.selectbox("Region", ["us-east-1", "us-west-2", "eu-central-1"])
-        st.caption("ⓘ The default settings are recommended for the selected embeddings model")
+        st.caption(f"ⓘ The default settings are recommended for the selected embeddings model: {embeddings_model}")
         index_create_submit_button = st.form_submit_button(label="Create Index")
         # Check if the submit button is pressed
         try:
             if index_create_submit_button:
-                # Create the index
-                pc.create_index(
-                    name=new_index_name,
-                    dimension=dimension,
-                    metric=metric,
-                    spec=ServerlessSpec(
-                        cloud=cloud,
-                        region=region
+                with st.spinner("Creating index... ⌛"):
+                    # Create the index
+                    pc.create_index(
+                        name=new_index_name,
+                        dimension=dimension,
+                        metric=metric,
+                        spec=ServerlessSpec(
+                            cloud=cloud,
+                            region=region
+                        )
                     )
-                )
-                # Display a success message
-                st.success(f"{new_index_name} was created successfully!")
-                time.sleep(2)
-                st.rerun()
+                    # Display a success message
+                    time.sleep(2)
+                    st.success(f"{new_index_name} was created successfully!")
+                    time.sleep(1.5)
+                    st.rerun()
 
         except Exception as e:
             if "already exists" in str(e):
@@ -204,11 +195,13 @@ def pc_create_index():
                     
                     if delete_index_submit_button:
                         if delete_index_input == st.session_state.index_to_delete:
-                            pc.delete_index(st.session_state.index_to_delete)
-                            st.success(f"Deleted index: {st.session_state.index_to_delete}")
-                            del st.session_state.index_to_delete
-                            time.sleep(1)
-                            st.rerun()
+                            with st.spinner(f"Deleting index ... 🗑️"):
+                                pc.delete_index(st.session_state.index_to_delete)
+                                time.sleep(1.5)
+                                st.success(f"Deleted index: {st.session_state.index_to_delete}")
+                                del st.session_state.index_to_delete
+                                time.sleep(1)
+                                st.rerun()
                         else:
                             st.error("Wrong input. Please type the index name to confirm deletion.")
 
@@ -274,7 +267,7 @@ def pc_upsert():
 
     with st.sidebar:
 
-        with st.expander("🚮 Delete all vectors", expanded=False):
+        with st.expander("🚮 Delete all vectors from an index", expanded=False):
             indexes = pc.list_indexes()  # Retrieve the list of Pinecone indexes
             index_names = [index.name for index in indexes]
             
@@ -304,13 +297,67 @@ def pc_upsert():
                     st.error("Please type the exact confirmation text to proceed with deletion.")
 
 
+def pc_query():
+    """Query an existing index in Pinecone."""
 
-def lc_upsert():
+    st.session_state.openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    st.session_state.pinecone = Pinecone(api_key=st.secrets["PINECONE_API_KEY"])
+
+    pc = st.session_state.pinecone
+    client = st.session_state.openai
+
+    st.header("🌲 Pinecone - Query Index", divider="green")
+    st.markdown("\n \n")
+
+    indexes = pc.list_indexes()
+    index_names = [index.name for index in indexes] 
+ 
+    with st.form(key="query_index_form", clear_on_submit=True, border=False):
+        index_to_query = st.selectbox("Index name", index_names, placeholder="Select an index", index=None)
+        expander_index = index_to_query
+        query_text = st.text_area("Query", help="Enter the text to query the index")
+        top_k_value = st.slider("Top K", 1, 5)
+        query_index_submit_button = st.form_submit_button("Query")
+        if query_index_submit_button and index_to_query and query_text:
+            index_to_query = pc.Index(index_to_query)
+            res = client.embeddings.create(
+                model=st.session_state.embeddings_model,
+                input=[query_text], 
+                encoding_format="float"
+                )
+            embedding = res.data[0].embedding
+            result = index_to_query.query(
+                vector=embedding,
+                top_k=top_k_value,
+                include_metadata=True
+            )
+            st.markdown("\n \n")
+            with st.expander(f"🔍 Query Results for {expander_index}", expanded=True):
+                st.write(f"**Top {top_k_value} matches:**")
+                st.markdown("\n \n")
+                for i, match in enumerate(result.matches[:top_k_value], start=1):
+                    st.write(f"**Vector Match: {i}**")
+                    st.write(f"ID: {match.id}")
+                    st.write(f"Score: :blue[{round(match.score, 3)}]")
+                    st.write(f"Metadata: {match.metadata}")
+                    if i < top_k_value:
+                        st.markdown("---")
+
+    if query_index_submit_button:    
+        if st.button("🔄 Clear"):
+            st.rerun()
+
+    st.sidebar.markdown("---")        
+    # lists the available indexes in the sidebar
+    list_all_indexes()
+
+
+def lc_loaders():
     """Upsert vectors to an existing index using LangChain."""
     from langchain_pinecone import PineconeVectorStore
     from langchain_openai import OpenAIEmbeddings
     from langchain_community.document_loaders import TextLoader
-    from langchain_text_splitters import CharacterTextSplitter
+    from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
     import tempfile
     
 
@@ -321,12 +368,28 @@ def lc_upsert():
     st.header("🦜🔗 LangChain - Document Loaders", divider="green")
     st.markdown("\n \n")
     st.caption("💡 Tip: Use [ChunkViz](https://chunkviz.up.railway.app/) to visualize how your text will be split into chunks.")
+    with st.expander("📢 Difference between splitters", expanded=False):
+        st.caption("It's important to understand the difference between the two chosen splitters.")
+        st.write("**CharacterTextSplitter:** Splits the text into chunks based on a specified separator (if chosen, otherwise purely on word count).")
+        st.write("**RecursiveCharacterTextSplitter:** Splits the text into chunks recursively, ensuring that each chunk is a complete sentence.")
 
     indexes = pc.list_indexes()
     index_name = st.selectbox(label="Index name", options=[index.name for index in indexes], placeholder="Select an index", index=None)
+
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        splitter_type = st.selectbox("Text Splitter", ["CharacterTextSplitter", "RecursiveCharacterTextSplitter"], index=0)
+
+    if splitter_type == "RecursiveCharacterTextSplitter":
+        with col2:
+            st.text_input("Separator", value="Disabled", disabled=True)
     
-    # choice of text splitter
-    text_splitter = st.selectbox("Text Splitter", ["CharacterTextSplitter", "RecursiveCharacterTextSplitter"], index=0)
+    separator = ""
+    if splitter_type == "CharacterTextSplitter":
+        with col2:
+            separator = st.text_input("Separator", help="Choose a separator to split the text. Can be anything you want including empty.")
+            if separator == "":
+                separator = None  # Handle case where no separator is provided
 
     # chunk size
     chunk_size = st.slider("Chunk Size", 128, 1024, 512)
@@ -342,21 +405,25 @@ def lc_upsert():
             temp_file.write(uploaded_file.read())
             temp_file_path = temp_file.name
 
-    if st.button("Upsert Vectors"):
+
+    if st.button("Upsert Vectors", disabled=True):
         # Initialize progress bar
-        progress_bar = st.progress(0, "⌛ Upserting vectors...")
+        progress_bar = st.progress(0)
 
         # Load the documents
         loader = TextLoader(temp_file_path, encoding="utf-8")
         documents = list(loader.load())  # Ensure documents are loaded into memory
 
-        # Split documents into chunks
-        text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+        # Initialize the appropriate text splitter
+        if splitter_type == "CharacterTextSplitter":
+            text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap, separator=separator, is_separator_regex=False)
+        elif splitter_type == "RecursiveCharacterTextSplitter":
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         docs = text_splitter.split_documents(documents)
 
         total_docs = len(docs)
         for i, doc_chunk in enumerate(docs):
-            # Upsert the current chunk of documents
             vectorstore_from_docs = PineconeVectorStore.from_documents(
                 [doc_chunk],
                 index_name=index_name,
@@ -371,42 +438,24 @@ def lc_upsert():
         progress_bar.empty()
         st.success(f"Upserted {total_docs} vectors to {index_name}")
     
+    st.sidebar.markdown("---")
     # lists the available indexes in the sidebar
     list_all_indexes()
 
-def lc_query():
-    """Query an existing index in Pinecone."""
-    from langchain_pinecone import PineconeVectorStore
-    pc = st.session_state.pinecone
 
+def lc_query():
+    """Query an existing index using LangChain."""
+    from langchain_pinecone import PineconeVectorStore
+    from langchain_openai import OpenAIEmbeddings
+    from langchain_community.document_loaders import TextLoader
+    from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
+    import tempfile
+
+    # under construction
     st.header("🦜🔗 LangChain - Query Index", divider="green")
     st.markdown("\n \n")
 
-    indexes = pc.list_indexes()
-    index_names = [index.name for index in indexes] 
- 
-    with st.form(key="query_index_form", clear_on_submit=True):
-        index_to_query = st.selectbox("Index name", index_names, placeholder="Select an index", index=None)
-        query = st.text_area("Query", help="Enter the text to query the index")
-        top_k_value = st.slider("Top K", 1, 5)
-        query_index_submit_button = st.form_submit_button("Query")
-        # if query_index_submit_button and index_to_query and query:
-        #     try:
-        #         vectorstore = PineconeVectorStore(
-        #             index=index_to_query,
-        #             embedding=st.session_state.embeddings,
-                    
-
-        #         )
-
-        #         st.write(f"Result: {result}")
-        #     except Exception as e:
-        #         st.error(f"**Error:** {e}")
-
-    # lists the available indexes in the sidebar
-    list_all_indexes()
-
-
+    st.subheader("🚧👷🏗️ Under construction")
 
 
 def openai_chatbot():
@@ -587,7 +636,8 @@ page_names_to_funcs = {
 "📚 Getting started with RAG": rag_info,
 "🌲 Pinecone - Create Index": pc_create_index,
 "🌲 Pinecone - Upsert Vectors": pc_upsert,
-"🦜🔗 LangChain - Document Loaders": lc_upsert,
+"🌲 Pinecone - Query Index": pc_query,
+"🦜🔗 LangChain - Document Loaders": lc_loaders,
 "🦜🔗 LangChain - Query Index": lc_query,
 "⚛️ OpenAI - Chatbot": openai_chatbot
 }
