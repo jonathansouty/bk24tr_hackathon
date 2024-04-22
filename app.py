@@ -30,7 +30,7 @@ st.session_state.gpt_model = "gpt-4-0125-preview"
 
 
 def intro():
-    st.header('🌎 RAG Builder App', divider="green")
+    st.header('🌎 RAG Builder', divider="green")
     st.markdown("\n \n")
 
     st.write("""
@@ -41,17 +41,15 @@ def intro():
     To get started, you'll need API keys from OpenAI and Pinecone.
     """)
 
-    st.subheader("👈 Go to the instructions page to get started.")
 
     st.subheader("🔗 Useful Links:")
     st.page_link("https://chunkviz.up.railway.app/", label="👉 ChunkViz")
     st.write("ChunkViz is a tool to help you visualize and understand chunking embeddings.")
-    st.caption("Credit to Greg Kamradt for open-sourcing ChunkViz.")
+    st.caption("Credit to Greg Kamradt.")
 
     "---"
 
-    st.write("Feel free to fork the repository on [GitHub]")
-    st.caption("This app is made by Jonathan Souty")
+    st.write("Feel free to fork the repository on [GitHub](https://github.com/jonathansouty/bk24tr_hackathon)")
     
     st.markdown("\n \n")
 
@@ -81,14 +79,14 @@ def rag_info():
     st.header("📚 Getting started with RAG", divider="green")
     st.markdown("\n \n")
 
-    st.subheader("Pinecone Workflow:")
+    st.subheader("Embedding vectors with Pinecone:")
     st.markdown("**Getting started with Pincone:**")
     st.write(" Create a new vector database by specifying the dimension of the vectors you'll be storing and the metric (eg. cosine, euclidean distance, dot product). You can then start uploading your vectors using the upsert method, where each vector is associated with a unique ID. Finally, you can query the database by sending vector queries to retrieve the most similar vectors based on your specified metrics. Pinecone also supports more advanced features like metadata filtering and batch querying, enabling powerful and efficient data retrieval in your applications.")
     st.image("https://i.postimg.cc/8CjCcJTM/vectordb.png", use_column_width=True)
 
     "---"
 
-    st.subheader("RAG Workflow:")
+    st.subheader("RAG with LLMs:")
     st.write("In this specific example, the user asks about servicing a model of forklift, and the RAG system provides a detailed list of parts needed for servicing the brakes on that forklift model. The RAG system retrieves the relevant information from a knowledge base and generates a response based on the user's query. The system uses a combination of retrieval and generation techniques to provide accurate and informative responses to user queries.")
     st.image("https://i.postimg.cc/rFfc4VnJ/ragmindmap.png", use_column_width=True)
     rag_explanation = """
@@ -111,9 +109,6 @@ def rag_info():
     with st.expander("📖 RAG Explanation - Click to expand", expanded=False):
         st.markdown(rag_explanation)
 
-    "---"
-
-    st.subheader("🔗🦜 LangChain Loaders:")
 
 
 def list_all_indexes():
@@ -204,7 +199,6 @@ def pc_create_index():
                                 st.rerun()
                         else:
                             st.error("Wrong input. Please type the index name to confirm deletion.")
-
 
 
 def pc_upsert():
@@ -316,8 +310,8 @@ def pc_query():
         index_to_query = st.selectbox("Index name", index_names, placeholder="Select an index", index=None)
         expander_index = index_to_query
         query_text = st.text_area("Query", help="Enter the text to query the index")
-        top_k_value = st.slider("Top K", 1, 5)
-        query_index_submit_button = st.form_submit_button("Query")
+        top_k_value = st.slider("Top K", 1, 10, 5)
+        query_index_submit_button = st.form_submit_button("🔍 Query")
         if query_index_submit_button and index_to_query and query_text:
             index_to_query = pc.Index(index_to_query)
             res = client.embeddings.create(
@@ -329,7 +323,8 @@ def pc_query():
             result = index_to_query.query(
                 vector=embedding,
                 top_k=top_k_value,
-                include_metadata=True
+                include_metadata=True,
+                include_values=True
             )
             st.markdown("\n \n")
             with st.expander(f"🔍 Query Results for {expander_index}", expanded=True):
@@ -339,6 +334,7 @@ def pc_query():
                     st.write(f"**Vector Match: {i}**")
                     st.write(f"ID: {match.id}")
                     st.write(f"Score: :blue[{round(match.score, 3)}]")
+                    st.write(f"Values: {match.values[:5][-5:]}")
                     st.write(f"Metadata: {match.metadata}")
                     if i < top_k_value:
                         st.markdown("---")
@@ -361,7 +357,7 @@ def lc_loaders():
     import tempfile
     
 
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(model=st.session_state.embeddings_model)
     #pc = st.session_state.pinecone
     pc = Pinecone(api_key=st.secrets["PINECONE_API_KEY"])
 
@@ -387,7 +383,7 @@ def lc_loaders():
     separator = ""
     if splitter_type == "CharacterTextSplitter":
         with col2:
-            separator = st.text_input("Separator", help="Choose a separator to split the text. Can be anything you want including empty.")
+            separator = st.text_input(label="Separator", placeholder="Ex. & or //", help="Choose a separator to split the text. Can be anything you want including empty.")
             if separator == "":
                 separator = None  # Handle case where no separator is provided
 
@@ -406,7 +402,7 @@ def lc_loaders():
             temp_file_path = temp_file.name
 
 
-    if st.button("Upsert Vectors", disabled=True):
+    if st.button("Upsert Vectors", disabled=False):
         # Initialize progress bar
         progress_bar = st.progress(0)
 
@@ -447,9 +443,8 @@ def lc_query():
     """Query an existing index using LangChain."""
     from langchain_pinecone import PineconeVectorStore
     from langchain_openai import OpenAIEmbeddings
-    from langchain_community.document_loaders import TextLoader
-    from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
-    import tempfile
+
+
 
     # under construction
     st.header("🦜🔗 LangChain - Query Index", divider="green")
@@ -457,13 +452,21 @@ def lc_query():
 
     st.subheader("🚧👷🏗️ Under construction")
 
+    # select index
+    index_lc_query = st.selectbox("Index name", [index.name for index in st.session_state.pinecone.list_indexes()], placeholder="Select an index", index=None)
+
+    
+
+    # select LLM model
+    llm_model_lc_query = st.selectbox("LLM Model", ["gpt-4-turbo", "gpt-3.5-turbo"], index=0)
+
 
 def openai_chatbot():
     """OpenAI Chatbot using Pinecone for embeddings."""
     # model settings
 
-    system_prompt = "Hej! Jag är en matematikassistent som kan hjälpa dig med dina frågor. Vad vill du veta?"
-    bot_name = "Matematik GPT"
+    system_prompt = "Du är en matematiklärare som lär ut matte enbart genom att använda zebror som exempel."
+    bot_name = "Zebra GPT"
     bot_avatar = "🧑‍🏫"
 
 
@@ -499,8 +502,10 @@ def openai_chatbot():
     st.session_state.index = st.sidebar.selectbox(label="🌲 **Pinecone Index**", options=list_indexes, placeholder="Select an Index", index=None)
     if st.session_state.index is None:
         st.sidebar.info("💡Select an index to include Pinecone embeddings in the chatbot.")
-    
-    st.sidebar.markdown("---")
+
+    # Similarity score threshold
+    st.session_state.similarity_score = st.sidebar.slider("**Similarity Score Threshold**", min_value=0.1, max_value=1.0, value=0.5, step=0.05, help="Lower values might include more context than necessary")
+
 
     # clear chat button
     st.sidebar.button("🚮 Clear chat", on_click=lambda: st.session_state.pop("messages", None))
@@ -539,8 +544,7 @@ def openai_chatbot():
                         raise ValueError("Ingen vektor matchning hittades.")
 
                     match = result.matches[0]
-                    cosine_threshold = 0.1
-                    if match.score >= cosine_threshold:
+                    if match.score >= st.session_state.similarity_score:
                         context = match.metadata['text']
                         string_before_context = "Använd denna information om det hjälper dig att svara på frågan bättre:"
                     else:
@@ -555,7 +559,7 @@ def openai_chatbot():
                 system_prompt_full = f"{system_prompt} {string_before_context}{context}"
                 print("-" * 40)
                 print("New prompt ...")
-                print(f"Cosine Similarity threshold: {cosine_threshold}")
+                print(f"Cosine Similarity threshold: {st.session_state.similarity_score:.2f}")
                 print(f"> Vector 1  |  id: {result.matches[0].id}  |  Cos sim: {round(result.matches[0].score, 3)}  |  Context: {' '.join(context.split()[:10])} ...")
                 for rank, match in enumerate(result.matches[1:5], start=2):
                     print(f"Vector: {rank}  |  id: {match.id}  |  Cos sim: {round(match.score, 3)}")
@@ -578,6 +582,7 @@ def openai_chatbot():
         # append the response message to the messages list
         if response:
             st.session_state.messages.append({"role": "assistant", "content": response})
+            st.toast(f"Similarity Score: {match.score:.3f}")
             if len(st.session_state.messages) > 10:
                 st.session_state.messages = st.session_state.messages[-10:]  # keep only the last 10 messages
 
@@ -588,6 +593,8 @@ def openai_chatbot():
         print(f"Response: ", " ".join(response.split()[:10]), " ...")
         print(f"Finished. Time: {timestamp}")
         print("-" * 40)
+
+
 
 
     def display_message(role, content):
